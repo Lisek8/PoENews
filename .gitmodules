@@ -1,0 +1,3 @@
+[submodule "UtilsAndConfigs"]
+	path = UtilsAndConfigs
+	url = git@github.com:Lisek8/PoENewsUtilsAndConfigs.git
