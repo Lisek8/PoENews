@@ -1,6 +1,6 @@
 import { Client, TextChannel } from "discord.js";
 import Twit from "twit";
-import { Logger } from "./logging";
+import { Logger } from "../utilities/logging";
 
 export interface TwitterLoginConfiguration {
   consumerKey: string;

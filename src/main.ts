@@ -1,10 +1,9 @@
-import { Client, TextChannel } from "discord.js";
+import { Client } from "discord.js";
 import fs from "fs";
-import Twit from 'twit';
-import { ApplicationConfiguration } from "./dataStructures";
-import { Logger } from "./logging";
-import { PoENews } from "./poeNews";
-import { Twitter } from "./twitter";
+import { ApplicationConfiguration } from "./utilities/dataStructures";
+import { Logger } from "./utilities/logging";
+import { PoENews } from "./services/poeNews";
+import { Twitter } from "./services/twitter";
 
 const client = new Client();
 const configurationFile: ApplicationConfiguration = {
@@ -42,7 +41,6 @@ Logger.info(`PoENews bot starting`, { label: 'STARTUP' });
 
 loadConfiguration();
 
-
 client.login(configurationFile.discordBotToken);
 const pathOfExileNews: PoENews = new PoENews(client, configurationFile.poeConfig);
 const twitterNews: Twitter = new Twitter(client, configurationFile.twitterConfig);
@@ -64,7 +62,7 @@ function setActivity() {
 function loadConfiguration() {
   Logger.info(`Loading configuration`, { label: 'CONFIG' });
   try {
-    Object.assign(configurationFile, JSON.parse(fs.readFileSync("./settings.json", "utf-8")));
+    Object.assign(configurationFile, JSON.parse(fs.readFileSync("./env/settings.json", "utf-8")));
     twitterConfiguration.consumer_key = configurationFile.twitterConfig.loginInformation.consumerKey;
     twitterConfiguration.consumer_secret = configurationFile.twitterConfig.loginInformation.consumerSecret;
     twitterConfiguration.access_token = configurationFile.twitterConfig.loginInformation.accessToken;

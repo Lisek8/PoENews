@@ -1,7 +1,7 @@
 import { Client, MessageEmbed, TextChannel } from "discord.js";
 import got from "got/dist/source";
 import { HTMLElement, parse } from "node-html-parser";
-import { Logger } from "./logging";
+import { Logger } from "../utilities/logging";
 import fs from "fs";
 
 export interface PathOfExileNewsConfiguration {
@@ -78,7 +78,9 @@ export class PoENews {
           }
         }
       } catch (error: any) {
-        Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
+        if (error.response?.code) {
+          Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
+        }
         Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });  
       }
     }

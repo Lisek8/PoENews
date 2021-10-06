@@ -1,6 +1,6 @@
 {
   "name": "poenewsdiscordbot",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "",
   "main": "main.js",
   "dependencies": {
@@ -14,21 +14,27 @@
     "@types/node": "^14.14.37",
     "@types/twit": "^2.2.29",
     "build-number-generator": "^1.0.0",
-    "copyfiles": "^2.4.1",
     "node-ssh": "^11.1.1",
     "scp2": "^0.5.0",
     "typescript": "^4.2.4"
   },
   "scripts": {
-    "build": "tsc && copyfiles -u 1 env/settings.json dist && npm run generateBuildVersion",
-    "build:prod": "tsc && copyfiles -u 1 env/settings.prod.json dist && node -e \"require('fs').rename('dist/settings.prod.json', 'dist/settings.json', function(err) { if (err) console.log(err); console.log('Configuration file successfully renamed!') })\"  && npm run generateBuildVersion",
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "build:dev": "npm run build && npm run copyConfig:dev",
+    "postbuild:dev": "npm run generateBuildVersion",
+    "build:prod": "npm run build && npm run copyConfig",
+    "postbuild:prod": "npm run generateBuildVersion",
     "build:release": "npm run build:prod && npm run deploy",
-    "build:release:dev": "npm run build && npm run deploy:dev",
-    "start": "npm run build && cd dist && node main.js",
-    "deploy": "node utils/deploy.mjs",
-    "deploy:dev": "node utils/deploy.mjs --dev",
-    "generateBuildVersion": "node utils/generateBuildVersion.js"
+    "build:release:dev": "npm run build:dev && npm run deploy:dev",
+    "copyConfig": "node UtilsAndConfigs/utils/copyFile.mjs \"UtilsAndConfigs/env/settings.prod.json\" \"dist/env/settings.json\"",
+    "copyConfig:dev": "node UtilsAndConfigs/utils/copyFile.mjs \"UtilsAndConfigs/env/settings.json\" \"dist/env/settings.json\"",
+    "start": "npm run build:dev && cd dist && node main.js",
+    "deploy": "node UtilsAndConfigs/utils/deploy.mjs",
+    "deploy:dev": "node UtilsAndConfigs/utils/deploy.mjs --dev",
+    "generateBuildVersion": "node UtilsAndConfigs/utils/generateBuildVersion.js",
+    "clean": "node UtilsAndConfigs/utils/deleteDirectories.mjs \"dist\""
   },
-  "author": "",
+  "author": "Lisek8",
   "license": "ISC"
 }
