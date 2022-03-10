@@ -1,11 +1,11 @@
-import { Client } from "discord.js";
+import { Client, Intents } from "discord.js";
 import fs from "fs";
 import { ApplicationConfiguration } from "./utilities/dataStructures";
 import { Logger } from "./utilities/logging";
 import { PoENews } from "./services/poeNews";
 import { Twitter } from "./services/twitter";
 
-const client = new Client();
+const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const configurationFile: ApplicationConfiguration = {
   discordBotToken: "",
   poeConfig: {

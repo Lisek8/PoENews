@@ -14,6 +14,8 @@ export interface PathOfExileNewsConfiguration {
 }
 
 interface News {
+  forumTitle: string;
+  postBy: string;
   postDate: Date;
   title: string;
   link: string;
@@ -61,10 +63,14 @@ export class PoENews {
       try {
         const response = await got(`${this._configuration.baseLink}${forumPageId}${this._configuration.requestParameters}`);
         const document = parse(response.body);
+        const breadcrumbChildNodes = document.querySelector(".breadcrumb").childNodes;
+        const forumTitle = breadcrumbChildNodes[breadcrumbChildNodes.length - 1].textContent;
         for (let thread of document.querySelectorAll("table")[0].querySelectorAll("tbody")[0].querySelectorAll("tr")) {
           try {
             if (thread.innerHTML.includes("sticky") != true) {
               const news: News = {
+                forumTitle: forumTitle,
+                postBy: thread.querySelector(".post_by_account").text.trim(),
                 postDate: new Date(thread.querySelector(".post_date").rawText),
                 title: thread.querySelector(".title").text.trim(),
                 link: "https://www.pathofexile.com" + (thread.querySelector(".title").childNodes[1] as HTMLElement).attributes.href
@@ -88,11 +94,25 @@ export class PoENews {
   }
 
   private sendPoENews(news: News): void {
-    const embed = new MessageEmbed().setTitle(news.title).setURL(news.link).setThumbnail("https://web.poecdn.com/image/favicon/ogimage.png");
+    const embed = new MessageEmbed()
+      .setAuthor({
+        name: news.forumTitle,
+        iconURL: 'https://web.poecdn.com/image/favicon/ogimage.png'
+      })
+      .setTitle(news.title)
+      .setURL(news.link)
+      .setTimestamp(news.postDate)
+      .setFooter({
+        text: `${news.postBy}`
+      });
 
     this._configuration.subscriberChannels.forEach(subscriberChannel => {
       const channel = this._discordClient.channels.cache.get(subscriberChannel) as TextChannel;
-      channel.send(embed);
+      channel.send({
+        embeds: [
+          embed
+        ]
+      });
     });
   }
 
