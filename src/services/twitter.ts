@@ -1,6 +1,6 @@
-import { Client, TextChannel } from "discord.js";
-import Twit from "twit";
-import { Logger } from "../utilities/logging";
+import { Client, TextChannel } from 'discord.js';
+import Twit from 'twit';
+import { Logger } from '../utilities/logging';
 
 export interface TwitterLoginConfiguration {
   consumerKey: string;
@@ -23,12 +23,12 @@ export interface TwitterConfiguration {
 }
 
 interface InternalTwitterLoginConfiguration {
-  consumer_key: string,
-  consumer_secret: string,
-  access_token: string,
-  access_token_secret: string,
-  timeout_ms: number,
-  strictSSL: boolean
+  consumer_key: string;
+  consumer_secret: string;
+  access_token: string;
+  access_token_secret: string;
+  timeout_ms: number;
+  strictSSL: boolean;
 }
 
 export class Twitter {
@@ -38,27 +38,30 @@ export class Twitter {
   private _twitterStreams: Twit.Stream[] = [];
   private _running: boolean = false;
 
-  constructor (discordClient: Client, configuration: TwitterConfiguration) {
+  constructor(discordClient: Client, configuration: TwitterConfiguration) {
     this._discordClient = discordClient;
     this._configuration = configuration;
-    
+
     Logger.info(`Creating Twitter instance`, { label: 'TWITTER' });
   }
 
   private createTwitterStreams() {
     if (this._configuration.enabled) {
       Logger.info(`Creating twitter streams`, { label: 'TWITTER' });
-      this._configuration.twitterSubscriptions.forEach(subscription => {
-        const twitterStream: Twit.Stream | undefined = this._twitterClient?.stream("statuses/filter", {
-          follow: subscription.channelId
+      this._configuration.twitterSubscriptions.forEach((subscription) => {
+        const twitterStream: Twit.Stream | undefined = this._twitterClient?.stream('statuses/filter', {
+          follow: subscription.channelId,
         });
 
         if (twitterStream != null) {
           Logger.info(`Successfully created stream for: ${subscription.name}`, { label: 'TWITTER' });
 
-          twitterStream.on("tweet", (tweet) => {
-            if (tweet.user.screen_name === subscription.name && (!tweet.in_reply_to_user_id_str || tweet.in_reply_to_user_id_str === subscription.channelId)) {
-              subscription.subscriberChannels.forEach(channelId => {
+          twitterStream.on('tweet', (tweet) => {
+            if (
+              tweet.user.screen_name === subscription.name &&
+              (!tweet.in_reply_to_user_id_str || tweet.in_reply_to_user_id_str === subscription.channelId)
+            ) {
+              subscription.subscriberChannels.forEach((channelId) => {
                 const channel = this._discordClient.channels.cache.get(channelId) as TextChannel;
                 channel.send(`https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`);
               });
@@ -86,8 +89,8 @@ export class Twitter {
         access_token: this._configuration.loginInformation.accessToken,
         access_token_secret: this._configuration.loginInformation.accessTokenSecret,
         timeout_ms: 60000,
-        strictSSL: true
-      }
+        strictSSL: true,
+      };
       this._running = true;
       this._twitterClient = new Twit(loginConfiguration);
       this.createTwitterStreams();

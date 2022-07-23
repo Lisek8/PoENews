@@ -1,8 +1,8 @@
-import { Client, MessageEmbed, TextChannel } from "discord.js";
-import got from "got/dist/source";
-import { HTMLElement, parse } from "node-html-parser";
-import { Logger } from "../utilities/logging";
-import fs from "fs";
+import { Client, MessageEmbed, TextChannel } from 'discord.js';
+import got from 'got/dist/source';
+import { HTMLElement, parse } from 'node-html-parser';
+import { Logger } from '../utilities/logging';
+import fs from 'fs';
 
 export interface PathOfExileNewsConfiguration {
   enabled: boolean;
@@ -26,10 +26,10 @@ export class PoENews {
   private _configuration: PathOfExileNewsConfiguration;
   private _refreshInterval: NodeJS.Timeout | undefined;
   private _lastUpdateDate: Date;
-  private _lastUpdateFile = "lastUpdate";
+  private _lastUpdateFile = 'data/lastUpdate';
   private _running: boolean = false;
 
-  constructor (discordClient: Client, configuration: PathOfExileNewsConfiguration) {
+  constructor(discordClient: Client, configuration: PathOfExileNewsConfiguration) {
     this._discordClient = discordClient;
     this._configuration = configuration;
     this._lastUpdateDate = new Date();
@@ -39,12 +39,12 @@ export class PoENews {
   private loadLastUpdateDate(): void {
     try {
       if (fs.existsSync(this._lastUpdateFile)) {
-        this._lastUpdateDate = new Date(fs.readFileSync(this._lastUpdateFile, "utf-8"));
+        this._lastUpdateDate = new Date(fs.readFileSync(this._lastUpdateFile, 'utf-8'));
       } else {
         this._lastUpdateDate = new Date();
         this.saveLastUpdateDate();
       }
-    } catch(error) {
+    } catch (error) {
       Logger.error(`Failed read/write to last update file: ${error}`, { label: 'I/O' });
     }
   }
@@ -52,7 +52,7 @@ export class PoENews {
   private saveLastUpdateDate(): void {
     try {
       fs.writeFileSync(this._lastUpdateFile, this._lastUpdateDate.toUTCString());
-    } catch(error) {
+    } catch (error) {
       Logger.error(`Failed write to last update file: ${error}`, { label: 'I/O' });
     }
   }
@@ -63,17 +63,17 @@ export class PoENews {
       try {
         const response = await got(`${this._configuration.baseLink}${forumPageId}${this._configuration.requestParameters}`);
         const document = parse(response.body);
-        const breadcrumbChildNodes = document.querySelector(".breadcrumb").childNodes;
+        const breadcrumbChildNodes = document.querySelector('.breadcrumb').childNodes;
         const forumTitle = breadcrumbChildNodes[breadcrumbChildNodes.length - 1].textContent;
-        for (let thread of document.querySelectorAll("table")[0].querySelectorAll("tbody")[0].querySelectorAll("tr")) {
+        for (let thread of document.querySelectorAll('table')[0].querySelectorAll('tbody')[0].querySelectorAll('tr')) {
           try {
-            if (thread.innerHTML.includes("sticky") != true) {
+            if (thread.innerHTML.includes('sticky') != true) {
               const news: News = {
                 forumTitle: forumTitle,
-                postBy: thread.querySelector(".post_by_account").text.trim(),
-                postDate: new Date(thread.querySelector(".post_date").rawText),
-                title: thread.querySelector(".title").text.trim(),
-                link: "https://www.pathofexile.com" + (thread.querySelector(".title").childNodes[1] as HTMLElement).attributes.href
+                postBy: thread.querySelector('.post_by_account').text.trim(),
+                postDate: new Date(thread.querySelector('.post_date').rawText),
+                title: thread.querySelector('.title').text.trim(),
+                link: 'https://www.pathofexile.com' + (thread.querySelector('.title').childNodes[1] as HTMLElement).attributes.href,
               };
               if (news.postDate > this._lastUpdateDate) {
                 newsToPost.push(news);
@@ -87,7 +87,7 @@ export class PoENews {
         if (error.response?.code) {
           Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
         }
-        Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });  
+        Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });
       }
     }
     return newsToPost;
@@ -97,21 +97,19 @@ export class PoENews {
     const embed = new MessageEmbed()
       .setAuthor({
         name: news.forumTitle,
-        iconURL: 'https://web.poecdn.com/image/favicon/ogimage.png'
+        iconURL: 'https://web.poecdn.com/image/favicon/ogimage.png',
       })
       .setTitle(news.title)
       .setURL(news.link)
       .setTimestamp(news.postDate)
       .setFooter({
-        text: `${news.postBy}`
+        text: `${news.postBy}`,
       });
 
-    this._configuration.subscriberChannels.forEach(subscriberChannel => {
+    this._configuration.subscriberChannels.forEach((subscriberChannel) => {
       const channel = this._discordClient.channels.cache.get(subscriberChannel) as TextChannel;
       channel.send({
-        embeds: [
-          embed
-        ]
+        embeds: [embed],
       });
     });
   }
@@ -120,7 +118,7 @@ export class PoENews {
     this.loadLastUpdateDate();
     const newUpdateDate = new Date();
     const newsToPost: News[] = await this.getNews();
-  
+
     // Order news by date
     newsToPost.sort((news1, news2) => {
       if (news1.postDate < news2.postDate) {
@@ -131,7 +129,7 @@ export class PoENews {
       }
       return 0;
     });
-  
+
     // Send news to discord
     this._lastUpdateDate = newUpdateDate;
     try {
@@ -176,7 +174,7 @@ export class PoENews {
     return this._configuration;
   }
 
-  public set subscriptions(config: PathOfExileNewsConfiguration)  {
+  public set subscriptions(config: PathOfExileNewsConfiguration) {
     this._configuration = config;
     // WEBUI: Configuration manager save file
     // WEBUI: Recreate timeout with setInterval if interval changed

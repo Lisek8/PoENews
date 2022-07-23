@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+    poe-news:
+      image: poe-news-discord-bot
+      volumes:
+          - poe-news-data:/poe-news/data
+          - poe-news-config:/poe-news/config
+      restart: always
+volumes:
+    poe-news-data:
+    poe-news-config:
