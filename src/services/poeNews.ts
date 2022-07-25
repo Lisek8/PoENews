@@ -51,7 +51,7 @@ export class PoENews {
 
   private saveLastUpdateDate(): void {
     try {
-      fs.writeFileSync(this._lastUpdateFile, this._lastUpdateDate.toUTCString());
+      fs.writeFileSync(this._lastUpdateFile, this._lastUpdateDate.toISOString());
     } catch (error) {
       Logger.error(`Failed write to last update file: ${error}`, { label: 'I/O' });
     }

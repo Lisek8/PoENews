@@ -11,6 +11,8 @@ RUN npm run build:${config}
 
 FROM node:16-alpine
 WORKDIR /poe-news
+RUN apk add --no-cache tzdata
+ENV TZ=Europe/Warsaw
 ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm install
