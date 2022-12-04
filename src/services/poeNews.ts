@@ -1,8 +1,8 @@
-import { Client, MessageEmbed, TextChannel } from 'discord.js';
-import got from 'got/dist/source';
+import { Client, EmbedBuilder, roleMention, TextChannel } from 'discord.js';
 import { HTMLElement, parse } from 'node-html-parser';
-import { Logger } from '../utilities/logging';
+import { Logger } from '../utilities/logging.js';
 import fs from 'fs';
+import got from 'got';
 
 export interface PathOfExileNewsConfiguration {
   enabled: boolean;
@@ -63,17 +63,17 @@ export class PoENews {
       try {
         const response = await got(`${this._configuration.baseLink}${forumPageId}${this._configuration.requestParameters}`);
         const document = parse(response.body);
-        const breadcrumbChildNodes = document.querySelector('.breadcrumb').childNodes;
+        const breadcrumbChildNodes = document.querySelector('.breadcrumb')!.childNodes;
         const forumTitle = breadcrumbChildNodes[breadcrumbChildNodes.length - 1].textContent;
         for (let thread of document.querySelectorAll('table')[0].querySelectorAll('tbody')[0].querySelectorAll('tr')) {
           try {
             if (thread.innerHTML.includes('sticky') != true) {
               const news: News = {
                 forumTitle: forumTitle,
-                postBy: thread.querySelector('.post_by_account').text.trim(),
-                postDate: new Date(thread.querySelector('.post_date').rawText),
-                title: thread.querySelector('.title').text.trim(),
-                link: 'https://www.pathofexile.com' + (thread.querySelector('.title').childNodes[1] as HTMLElement).attributes.href,
+                postBy: thread.querySelector('.post_by_account')!.text.trim(),
+                postDate: new Date(thread.querySelector('.post_date')!.rawText),
+                title: thread.querySelector('.title')!.text.trim(),
+                link: 'https://www.pathofexile.com' + (thread.querySelector('.title')!.childNodes[1] as HTMLElement).attributes.href,
               };
               if (news.postDate > this._lastUpdateDate) {
                 newsToPost.push(news);
@@ -94,10 +94,10 @@ export class PoENews {
   }
 
   private sendPoENews(news: News): void {
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
       .setAuthor({
         name: news.forumTitle,
-        iconURL: 'https://web.poecdn.com/image/favicon/ogimage.png',
+        iconURL: 'https://web.poecdn.com/protected/image/layout/lakeofkalandralogo.png?v=1662291060302.69&key=hpNs3Pfa9jU2LLSbRyZVnQ',
       })
       .setTitle(news.title)
       .setURL(news.link)
@@ -179,5 +179,12 @@ export class PoENews {
     // WEBUI: Configuration manager save file
     // WEBUI: Recreate timeout with setInterval if interval changed
     // WEBUI: Decide on fate depending on what changed :blobSweat:
+  }
+
+  public announce(channelId: string, message: string, roleId?: string): void {
+    const channel = this._discordClient.channels.cache.get(channelId) as TextChannel;
+    const mention = roleId ? roleMention(roleId) : '';
+
+    channel.send(`${mention} ${message}`);
   }
 }

@@ -1,7 +1,7 @@
 version: '3.8'
 services:
     poe-news:
-      image: poe-news-discord-bot
+      image: poe-news-discord-bot:${TAG}
       volumes:
           - poe-news-data:/poe-news/data
           - poe-news-config:/poe-news/config

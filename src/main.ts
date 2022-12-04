@@ -1,13 +1,20 @@
-import { Client, Intents } from 'discord.js';
+import { ActivityType, CacheType, Client, GatewayIntentBits, Interaction, Message } from 'discord.js';
+import { PoENews } from './services/poeNews.js';
+import { Twitter } from './services/twitter.js';
+import { Logger } from './utilities/logging.js';
+import { EmbedBuilder } from '@discordjs/builders';
+import { registerSlashCommands } from './slash-commands/commands.js';
+import { gracefulShutdown } from './utilities/functions.js';
+import { ClientWithCommands } from './utilities/dataStructures.js';
 import fs from 'fs';
-import { ApplicationConfiguration } from './utilities/dataStructures';
-import { Logger } from './utilities/logging';
-import { PoENews } from './services/poeNews';
-import { Twitter } from './services/twitter';
+import { registerClientEventHandlers } from './client-events/client-events.js';
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-const configurationFile: ApplicationConfiguration = {
+globalThis.client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+}) as ClientWithCommands;
+globalThis.configurationFile = {
   discordBotToken: '',
+  discordApplicationId: '',
   poeConfig: {
     enabled: true,
     refreshInterval: 60000,
@@ -42,13 +49,11 @@ Logger.info(`PoENews bot starting`, { label: 'STARTUP' });
 loadConfiguration();
 
 client.login(configurationFile.discordBotToken);
-const pathOfExileNews: PoENews = new PoENews(client, configurationFile.poeConfig);
-const twitterNews: Twitter = new Twitter(client, configurationFile.twitterConfig);
 
-client.on('ready', () => {
-  setActivity();
-  setInterval(setActivity, 10800000);
-});
+globalThis.pathOfExileNews = new PoENews(client, configurationFile.poeConfig);
+globalThis.twitterNews = new Twitter(client, configurationFile.twitterConfig);
+registerSlashCommands();
+registerClientEventHandlers();
 
 pathOfExileNews.start();
 twitterNews.start();
@@ -57,13 +62,7 @@ process.on('SIGINT', gracefulShutdown);
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGUSR2', gracefulShutdown);
 
-function setActivity() {
-  if (client.user) {
-    client.user.setActivity(configurationFile.version ? configurationFile.version : 'DEV_BUILD', { type: 'PLAYING' });
-  }
-}
-
-function loadConfiguration() {
+function loadConfiguration(): void {
   Logger.info(`Loading configuration`, { label: 'CONFIG' });
   try {
     Object.assign(configurationFile, JSON.parse(fs.readFileSync('./config/settings.json', 'utf-8')));
@@ -74,11 +73,4 @@ function loadConfiguration() {
   } catch (error) {
     Logger.error(`Failed to read configuration file: ${error}`, { label: 'CONFIG' });
   }
-}
-
-function gracefulShutdown() {
-  twitterNews.stop();
-  pathOfExileNews.stop();
-  client?.destroy();
-  process.exit(0);
 }

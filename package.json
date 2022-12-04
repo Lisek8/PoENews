@@ -1,20 +1,22 @@
 {
   "name": "poenewsdiscordbot",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "",
   "main": "main.js",
+  "type": "module",
   "dependencies": {
-    "discord.js": "^13.6.0",
-    "got": "^11.8.2",
-    "node-html-parser": "^3.1.4",
+    "dayjs": "^1.11.6",
+    "discord.js": "^14.6.0",
+    "got": "^12.5.2",
+    "node-html-parser": "^5.4.2",
     "twit": "^2.2.11",
-    "winston": "^3.3.3"
+    "winston": "^3.8.2"
   },
   "devDependencies": {
-    "@types/node": "^14.14.37",
-    "@types/twit": "^2.2.29",
-    "build-number-generator": "^1.0.0",
-    "typescript": "^4.2.4"
+    "@types/node": "^18.11.9",
+    "@types/twit": "^2.2.31",
+    "build-number-generator": "^2.0.4",
+    "typescript": "^4.8.4"
   },
   "scripts": {
     "start": "npm run build:dev:local && cd dist && node main.js",
@@ -30,10 +32,12 @@
     "copyConfig:dev": "node UtilsAndConfigs/utils/copyFile.mjs \"UtilsAndConfigs/env/settings.json\" \"dist-env/settings.json\"",
     "copyConfig:dev:local": "node UtilsAndConfigs/utils/copyFile.mjs \"UtilsAndConfigs/env/settings.json\" \"dist/config/settings.json\"",
     "copyConfig": "node UtilsAndConfigs/utils/copyFile.mjs \"UtilsAndConfigs/env/settings.prod.json\" \"dist-env/settings.json\"",
-    "docker-image:build:dev": "docker build -t poe-news-discord-bot --build-arg config=dev .",
-    "docker-image:build:prod": "docker build -t poe-news-discord-bot --platform=linux/arm/v7 .",
+    "docker-image:build:dev": "docker build -t poe-news-discord-bot:dev --build-arg config=dev .",
+    "docker-image:build:prod": "docker build -t poe-news-discord-bot:prod --platform=linux/arm/v7 .",
     "docker:deploy:dev": "sh './UtilsAndConfigs/utils/deployContainer.sh' default",
-    "docker:deploy:prod": "sh './UtilsAndConfigs/utils/deployContainer.sh'"
+    "docker:deploy:prod": "sh './UtilsAndConfigs/utils/deployContainer.sh'",
+    "docker:build-deploy:dev": "npm run \"docker-image:build:dev\" && npm run \"docker:deploy:dev\"",
+    "docker:build-deploy:prod": "npm run \"docker-image:build:prod\" && npm run \"docker:deploy:prod\""
   },
   "author": "Lisek8",
   "license": "ISC"
