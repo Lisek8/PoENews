@@ -6,5 +6,4 @@ declare global {
   var client: ClientWithCommands;
   var configurationFile: ApplicationConfiguration;
   var pathOfExileNews: PoENews;
-  var twitterNews: Twitter;
 }

@@ -1,11 +1,20 @@
 version: '3.8'
 services:
     poe-news:
+      container_name: poe-news-discord-${TAG}
       image: poe-news-discord-bot:${TAG}
       volumes:
           - poe-news-data:/poe-news/data
           - poe-news-config:/poe-news/config
+      networks:
+        poe-news-net:
+            aliases:
+                - poe-news-discord-bot
       restart: always
 volumes:
     poe-news-data:
     poe-news-config:
+networks:
+  poe-news-net:
+    name: poe-news-net 
+    external: true

@@ -6,10 +6,8 @@ import got from 'got';
 
 export interface PathOfExileNewsConfiguration {
   enabled: boolean;
+  newsServer: string;
   refreshInterval: number;
-  baseLink: string;
-  requestParameters: string;
-  sites: string[];
   subscriberChannels: string[];
 }
 
@@ -58,38 +56,25 @@ export class PoENews {
   }
 
   private async getNews(): Promise<News[]> {
-    const newsToPost = [];
-    for (let forumPageId of this._configuration.sites) {
-      try {
-        const response = await got(`${this._configuration.baseLink}${forumPageId}${this._configuration.requestParameters}`);
-        const document = parse(response.body);
-        const breadcrumbChildNodes = document.querySelector('.breadcrumb')!.childNodes;
-        const forumTitle = breadcrumbChildNodes[breadcrumbChildNodes.length - 1].textContent;
-        for (let thread of document.querySelectorAll('table')[0].querySelectorAll('tbody')[0].querySelectorAll('tr')) {
-          try {
-            if (thread.innerHTML.includes('sticky') != true) {
-              const news: News = {
-                forumTitle: forumTitle,
-                postBy: thread.querySelector('.post_by_account')!.text.trim(),
-                postDate: new Date(thread.querySelector('.post_date')!.rawText),
-                title: thread.querySelector('.title')!.text.trim(),
-                link: 'https://www.pathofexile.com' + (thread.querySelector('.title')!.childNodes[1] as HTMLElement).attributes.href,
-              };
-              if (news.postDate > this._lastUpdateDate) {
-                newsToPost.push(news);
-              }
-            }
-          } catch (error) {
-            Logger.error(`An error occured while trying to get required data: ${error}`, { label: 'POE' });
-          }
-        }
-      } catch (error: any) {
-        if (error.response?.code) {
-          Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
-        }
-        Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });
+    let newsToPost: News[] = [];
+
+    try {
+      const response = await got(`${this._configuration.newsServer}/api/PoeNews`);
+
+      const newsFromBackend: News[] = JSON.parse(response.body);
+
+      newsToPost = newsFromBackend.map((news) => {
+        news.postDate = new Date(news.postDate);
+
+        return news;
+      }).filter((news) => news.postDate > this._lastUpdateDate);
+    } catch (error: any) {
+      if (error.response?.code) {
+        Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
       }
+      Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });
     }
+
     return newsToPost;
   }
 
@@ -97,7 +82,7 @@ export class PoENews {
     const embed = new EmbedBuilder()
       .setAuthor({
         name: news.forumTitle,
-        iconURL: 'https://web.poecdn.com/protected/image/layout/lakeofkalandralogo.png?v=1662291060302.69&key=hpNs3Pfa9jU2LLSbRyZVnQ',
+        iconURL: 'https://web.poecdn.com/public/news/2023-11-17/POELogoAffliction.png',
       })
       .setTitle(news.title)
       .setURL(news.link)
@@ -116,24 +101,10 @@ export class PoENews {
 
   private async checkNews(): Promise<void> {
     this.loadLastUpdateDate();
-    const newUpdateDate = new Date();
     const newsToPost: News[] = await this.getNews();
 
-    // Order news by date
-    newsToPost.sort((news1, news2) => {
-      if (news1.postDate < news2.postDate) {
-        return -1;
-      }
-      if (news1.postDate > news2.postDate) {
-        return 1;
-      }
-      return 0;
-    });
-
-    // Send news to discord
-    this._lastUpdateDate = newUpdateDate;
     try {
-      for (let news of newsToPost) {
+      for (let news of newsToPost.reverse()) {
         this.sendPoENews(news);
         this._lastUpdateDate = news.postDate;
       }
@@ -152,7 +123,7 @@ export class PoENews {
     if (this._configuration.enabled) {
       this._running = true;
       this.checkNews();
-      this._refreshInterval = setInterval(this.checkNews.bind(this), this._configuration.refreshInterval);
+      this._refreshInterval = setInterval(() => this.checkNews(), this._configuration.refreshInterval);
     } else {
       Logger.warn(`PoE news are disabled!`, { label: 'POE' });
     }
@@ -168,17 +139,6 @@ export class PoENews {
       clearInterval(this._refreshInterval);
     }
     this._running = false;
-  }
-
-  public get configuration(): PathOfExileNewsConfiguration {
-    return this._configuration;
-  }
-
-  public set subscriptions(config: PathOfExileNewsConfiguration) {
-    this._configuration = config;
-    // WEBUI: Configuration manager save file
-    // WEBUI: Recreate timeout with setInterval if interval changed
-    // WEBUI: Decide on fate depending on what changed :blobSweat:
   }
 
   public announce(channelId: string, message: string, roleId?: string): void {

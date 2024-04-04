@@ -1,22 +1,20 @@
 {
   "name": "poenewsdiscordbot",
-  "version": "1.5.0",
+  "version": "2.0.0-pre",
   "description": "",
   "main": "main.js",
   "type": "module",
   "dependencies": {
-    "dayjs": "^1.11.6",
-    "discord.js": "^14.6.0",
+    "dayjs": "^1.11.10",
+    "discord.js": "^14.14.1",
     "got": "^12.5.2",
     "node-html-parser": "^5.4.2",
-    "twit": "^2.2.11",
-    "winston": "^3.8.2"
+    "winston": "^3.11.0"
   },
   "devDependencies": {
-    "@types/node": "^18.11.9",
-    "@types/twit": "^2.2.31",
+    "@types/node": "^18.19.8",
     "build-number-generator": "^2.0.4",
-    "typescript": "^4.8.4"
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "start": "npm run build:dev:local && cd dist && node main.js",
@@ -33,10 +31,13 @@
     "copyConfig:dev:local": "node UtilsAndConfigs/utils/copyFile.mjs \"UtilsAndConfigs/env/settings.json\" \"dist/config/settings.json\"",
     "copyConfig": "node UtilsAndConfigs/utils/copyFile.mjs \"UtilsAndConfigs/env/settings.prod.json\" \"dist-env/settings.json\"",
     "docker-image:build:dev": "docker build -t poe-news-discord-bot:dev --build-arg config=dev .",
+    "docker-image:build:dev-arm": "docker build -t poe-news-discord-bot:dev --platform=linux/arm/v7 --build-arg config=dev .",
     "docker-image:build:prod": "docker build -t poe-news-discord-bot:prod --platform=linux/arm/v7 .",
     "docker:deploy:dev": "sh './UtilsAndConfigs/utils/deployContainer.sh' default",
+    "docker:deploy:remotedev": "sh './UtilsAndConfigs/utils/deployContainer.sh' remotedev",
     "docker:deploy:prod": "sh './UtilsAndConfigs/utils/deployContainer.sh'",
     "docker:build-deploy:dev": "npm run \"docker-image:build:dev\" && npm run \"docker:deploy:dev\"",
+    "docker:build-deploy:remotedev": "npm run \"docker-image:build:dev-arm\" && npm run \"docker:deploy:remotedev\"",
     "docker:build-deploy:prod": "npm run \"docker-image:build:prod\" && npm run \"docker:deploy:prod\""
   },
   "author": "Lisek8",

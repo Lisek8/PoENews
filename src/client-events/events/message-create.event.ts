@@ -22,6 +22,7 @@ export function registerMessageCreateEventHandler(): void {
     if (leagueWhenStrings.some((leagueWhenString: string) => messageContent.startsWith(leagueWhenString))) {
       const leagueStartDate = dayjs(leagueInfo.leagueStartDate);
       const dateFormat = 'DD-MM-YYYY HH:mm';
+      const scotlandDateFormat = 'DD-MM-YYYY hh:mmA';
 
       const embed = new EmbedBuilder()
         .setColor(0x530191)
@@ -31,7 +32,7 @@ export function registerMessageCreateEventHandler(): void {
           value: [
             `:flag_pl: - ${leagueStartDate.tz('Europe/Warsaw').format(dateFormat)}`,
             `:flag_gb: - ${leagueStartDate.tz('Europe/London').format(dateFormat)}`,
-            `:scotland: - ${leagueStartDate.tz('Europe/London').format(dateFormat)}`,
+            `:scotland: - ${leagueStartDate.tz('Europe/London').format(scotlandDateFormat)}`,
             `:flag_ro: - ${leagueStartDate.tz('Europe/Bucharest').format(dateFormat)}`,
             `:flag_it: - ${leagueStartDate.tz('Europe/Rome').format(dateFormat)}`,
           ].join('\n'),
