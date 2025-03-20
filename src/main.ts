@@ -17,7 +17,8 @@ globalThis.configurationFile = {
     enabled: true,
     newsServer: '',
     refreshInterval: 60000,
-    subscriberChannels: [],
+    poeOneSubscriberChannels: [],
+    poeTwoSubscriberChannels: []
   },
 };
 

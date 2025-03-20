@@ -36,6 +36,8 @@ export function registerMessageCreateEventHandler(): void {
             `:flag_ro: - ${leagueStartDate.tz('Europe/Bucharest').format(dateFormat)}`,
             `:flag_it: - ${leagueStartDate.tz('Europe/Rome').format(dateFormat)}`,
           ].join('\n'),
+        }).setFooter({
+          text: 'Probable date - can\'t update while on holiday'
         });
 
       message.reply({

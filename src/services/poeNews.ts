@@ -8,7 +8,8 @@ export interface PathOfExileNewsConfiguration {
   enabled: boolean;
   newsServer: string;
   refreshInterval: number;
-  subscriberChannels: string[];
+  poeOneSubscriberChannels: string[];
+  poeTwoSubscriberChannels: string[];
 }
 
 interface News {
@@ -55,7 +56,7 @@ export class PoENews {
     }
   }
 
-  private async getNews(): Promise<News[]> {
+  private async getPoeOneNews(): Promise<News[]> {
     let newsToPost: News[] = [];
 
     try {
@@ -78,7 +79,30 @@ export class PoENews {
     return newsToPost;
   }
 
-  private sendPoENews(news: News): void {
+  private async getPoeTwoNews(): Promise<News[]> {
+    let newsToPost: News[] = [];
+
+    try {
+      const response = await got(`${this._configuration.newsServer}/api/Poe2News`);
+
+      const newsFromBackend: News[] = JSON.parse(response.body);
+
+      newsToPost = newsFromBackend.map((news) => {
+        news.postDate = new Date(news.postDate);
+
+        return news;
+      }).filter((news) => news.postDate > this._lastUpdateDate);
+    } catch (error: any) {
+      if (error.response?.code) {
+        Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
+      }
+      Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });
+    }
+
+    return newsToPost;
+  }
+
+  private sendPoENews(news: News, subscriberChannelList: string[]): void {
     const embed = new EmbedBuilder()
       .setAuthor({
         name: news.forumTitle,
@@ -91,7 +115,7 @@ export class PoENews {
         text: `${news.postBy}`,
       });
 
-    this._configuration.subscriberChannels.forEach((subscriberChannel) => {
+      subscriberChannelList.forEach((subscriberChannel) => {
       const channel = this._discordClient.channels.cache.get(subscriberChannel) as TextChannel;
       channel.send({
         embeds: [embed],
@@ -101,16 +125,34 @@ export class PoENews {
 
   private async checkNews(): Promise<void> {
     this.loadLastUpdateDate();
-    const newsToPost: News[] = await this.getNews();
+    const poeOneNewsToPost: News[] = await this.getPoeOneNews();
+    const poeTwoNewsToPost: News[] = await this.getPoeTwoNews();
+
+    let lastPoeOneUpdateDate: Date = this._lastUpdateDate;
 
     try {
-      for (let news of newsToPost.reverse()) {
-        this.sendPoENews(news);
-        this._lastUpdateDate = news.postDate;
+      for (let news of poeOneNewsToPost.reverse()) {
+        this.sendPoENews(news, this._configuration.poeOneSubscriberChannels);
+        lastPoeOneUpdateDate = news.postDate;
       }
     } catch (error) {
       Logger.error(`Failed to send news: ${error}`, { label: 'POE' });
     }
+
+    let lastPoeTwoUpdateDate: Date = this._lastUpdateDate;
+
+    try {
+      Logger.info(`PoE2 news found: ${poeTwoNewsToPost.length}`, { label: 'POE' });
+      for (let news of poeTwoNewsToPost.reverse()) {
+        this.sendPoENews(news, this._configuration.poeTwoSubscriberChannels);
+        lastPoeTwoUpdateDate = news.postDate;
+      }
+    } catch (error) {
+      Logger.error(`Failed to send news: ${error}`, { label: 'POE' });
+    }
+
+    this._lastUpdateDate = lastPoeOneUpdateDate > lastPoeTwoUpdateDate ? lastPoeOneUpdateDate : lastPoeTwoUpdateDate;
+
     this.saveLastUpdateDate();
   }
 
