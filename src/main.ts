@@ -3,7 +3,7 @@ import { PoENews } from './services/poeNews.js';
 import { Logger } from './utilities/logging.js';
 import { registerSlashCommands } from './slash-commands/commands.js';
 import { gracefulShutdown } from './utilities/functions.js';
-import { ClientWithCommands } from './utilities/dataStructures.js';
+import { ClientWithCommands, LogSource } from './utilities/dataStructures.js';
 import fs from 'fs';
 import { registerClientEventHandlers } from './client-events/client-events.js';
 
@@ -22,7 +22,7 @@ globalThis.configurationFile = {
   },
 };
 
-Logger.info(`PoENews bot starting`, { label: 'STARTUP' });
+Logger.info(`PoENews bot starting`, { label: LogSource.STARTUP });
 
 loadConfiguration();
 
@@ -41,10 +41,10 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGUSR2', gracefulShutdown);
 
 function loadConfiguration(): void {
-  Logger.info(`Loading configuration`, { label: 'CONFIG' });
+  Logger.info(`Loading configuration`, { label: LogSource.CONFIG });
   try {
     Object.assign(configurationFile, JSON.parse(fs.readFileSync('./config/settings.json', 'utf-8')));
   } catch (error) {
-    Logger.error(`Failed to read configuration file: ${error}`, { label: 'CONFIG' });
+    Logger.error(`Failed to read configuration file: ${error}`, { label: LogSource.CONFIG });
   }
 }

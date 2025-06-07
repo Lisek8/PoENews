@@ -1,8 +1,8 @@
 import { Client, EmbedBuilder, roleMention, TextChannel } from 'discord.js';
-import { HTMLElement, parse } from 'node-html-parser';
 import { Logger } from '../utilities/logging.js';
 import fs from 'fs';
 import got from 'got';
+import { LogSource } from '../utilities/dataStructures.js';
 
 export interface PathOfExileNewsConfiguration {
   enabled: boolean;
@@ -32,7 +32,7 @@ export class PoENews {
     this._discordClient = discordClient;
     this._configuration = configuration;
     this._lastUpdateDate = new Date();
-    Logger.info(`Creating PoENews instance`, { label: 'POE' });
+    Logger.info(`Creating PoENews instance`, { label: LogSource.POE });
   }
 
   private loadLastUpdateDate(): void {
@@ -44,7 +44,7 @@ export class PoENews {
         this.saveLastUpdateDate();
       }
     } catch (error) {
-      Logger.error(`Failed read/write to last update file: ${error}`, { label: 'I/O' });
+      Logger.error(`Failed read/write to last update file: ${error}`, { label: LogSource.IO });
     }
   }
 
@@ -52,7 +52,7 @@ export class PoENews {
     try {
       fs.writeFileSync(this._lastUpdateFile, this._lastUpdateDate.toISOString());
     } catch (error) {
-      Logger.error(`Failed write to last update file: ${error}`, { label: 'I/O' });
+      Logger.error(`Failed write to last update file: ${error}`, { label: LogSource.IO });
     }
   }
 
@@ -70,10 +70,8 @@ export class PoENews {
         return news;
       }).filter((news) => news.postDate > this._lastUpdateDate);
     } catch (error: any) {
-      if (error.response?.code) {
-        Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
-      }
-      Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });
+      Logger.error(error, { label: LogSource.POE})
+      Logger.warn(`Highly likely that website is under maintenance!`, { label: LogSource.POE });
     }
 
     return newsToPost;
@@ -94,9 +92,10 @@ export class PoENews {
       }).filter((news) => news.postDate > this._lastUpdateDate);
     } catch (error: any) {
       if (error.response?.code) {
-        Logger.error(`Http request failed with code: ${error.response.code}`, { label: 'POE' });
+        Logger.error(`Http request failed with code: ${error.response.code}`, { label: LogSource.POE });
       }
-      Logger.warn(`Highly likely that website is under maintenance!`, { label: 'POE' });
+
+      Logger.warn(`Highly likely that website is under maintenance!`, { label: LogSource.POE });
     }
 
     return newsToPost;
@@ -106,7 +105,7 @@ export class PoENews {
     const embed = new EmbedBuilder()
       .setAuthor({
         name: news.forumTitle,
-        iconURL: 'https://web.poecdn.com/public/news/2023-11-17/POELogoAffliction.png',
+        iconURL: 'https://web.poecdn.com/public/news/2025-05-21/POELogoSecretsoftheAtlas.png',
       })
       .setTitle(news.title)
       .setURL(news.link)
@@ -131,24 +130,27 @@ export class PoENews {
     let lastPoeOneUpdateDate: Date = this._lastUpdateDate;
 
     try {
+      Logger.info(`PoE news found: ${poeOneNewsToPost.length}`, { label: LogSource.POE });
+
       for (let news of poeOneNewsToPost.reverse()) {
         this.sendPoENews(news, this._configuration.poeOneSubscriberChannels);
         lastPoeOneUpdateDate = news.postDate;
       }
     } catch (error) {
-      Logger.error(`Failed to send news: ${error}`, { label: 'POE' });
+      Logger.error(`Failed to send news: ${error}`, { label: LogSource.POE });
     }
 
     let lastPoeTwoUpdateDate: Date = this._lastUpdateDate;
 
     try {
-      Logger.info(`PoE2 news found: ${poeTwoNewsToPost.length}`, { label: 'POE' });
+      Logger.info(`PoE2 news found: ${poeTwoNewsToPost.length}`, { label: LogSource.POE });
+      
       for (let news of poeTwoNewsToPost.reverse()) {
         this.sendPoENews(news, this._configuration.poeTwoSubscriberChannels);
         lastPoeTwoUpdateDate = news.postDate;
       }
     } catch (error) {
-      Logger.error(`Failed to send news: ${error}`, { label: 'POE' });
+      Logger.error(`Failed to send news: ${error}`, { label: LogSource.POE });
     }
 
     this._lastUpdateDate = lastPoeOneUpdateDate > lastPoeTwoUpdateDate ? lastPoeOneUpdateDate : lastPoeTwoUpdateDate;
@@ -158,28 +160,33 @@ export class PoENews {
 
   public start(): void {
     if (this._running) {
-      Logger.warn(`PoENews already running`, { label: 'POE' });
+      Logger.warn(`PoENews already running`, { label: LogSource.POE });
       return;
     }
-    Logger.info(`Starting PoENews`, { label: 'POE' });
+
+    Logger.info(`Starting PoENews`, { label: LogSource.POE });
+
     if (this._configuration.enabled) {
       this._running = true;
       this.checkNews();
       this._refreshInterval = setInterval(() => this.checkNews(), this._configuration.refreshInterval);
     } else {
-      Logger.warn(`PoE news are disabled!`, { label: 'POE' });
+      Logger.warn(`PoE news are disabled!`, { label: LogSource.POE });
     }
   }
 
   public stop(): void {
     if (!this._running) {
-      Logger.info(`PoENews is already stopped`, { label: 'POE' });
+      Logger.info(`PoENews is already stopped`, { label: LogSource.POE });
       return;
     }
-    Logger.info(`Stopping PoENews`, { label: 'POE' });
+
+    Logger.info(`Stopping PoENews`, { label: LogSource.POE });
+
     if (this._refreshInterval) {
       clearInterval(this._refreshInterval);
     }
+
     this._running = false;
   }
 

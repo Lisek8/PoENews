@@ -34,7 +34,7 @@ function setActivity(): void {
 
       setTimeout(setActivity, 15000);
     } else {
-      client.user.setActivity(configurationFile.version ? configurationFile.version : 'DEV_BUILD', {
+      client.user.setActivity(configurationFile.version || 'DEV_BUILD', {
         type: ActivityType.Playing,
       });
 
